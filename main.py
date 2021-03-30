@@ -7,8 +7,27 @@ from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 from pypfopt import expected_returns
 from pypfopt import risk_models
 from pypfopt.efficient_frontier import EfficientFrontier
+import sys
 
-START = "2019-01-01"
+START = "2010-01-01"
+
+
+class Logger():
+    stdout = sys.stdout
+    messages = []
+
+    def start(self):
+        sys.stdout = self
+
+    def stop(self):
+        sys.stdout = self.stdout
+
+    def write(self, text):
+        self.messages.append(text)
+
+
+log = Logger()
+
 
 # Define the ticker list
 tickers_nifty50 = "ADANIPORTS.NS ASIANPAINT.NS AXISBANK.NS BAJAJ-AUTO.NS BAJFINANCE.NS BAJAJFINSV.NS BPCL.NS BHARTIARTL.NS BRITANNIA.NS CIPLA.NS COALINDIA.NS DIVISLAB.NS DRREDDY.NS EICHERMOT.NS GAIL.NS GRASIM.NS HCLTECH.NS HDFCBANK.NS HDFCLIFE.NS HEROMOTOCO.NS HINDALCO.NS HINDUNILVR.NS HDFC.NS ICICIBANK.NS ITC.NS IOC.NS INDUSINDBK.NS INFY.NS JSWSTEEL.NS KOTAKBANK.NS LT.NS M&M.NS MARUTI.NS NTPC.NS NESTLEIND.NS ONGC.NS POWERGRID.NS RELIANCE.NS SBILIFE.NS SHREECEM.NS SBIN.NS SUNPHARMA.NS TCS.NS TATAMOTORS.NS TATASTEEL.NS TECHM.NS TITAN.NS UPL.NS ULTRACEMCO.NS WIPRO.NS"
@@ -29,7 +48,7 @@ with col1:
 with col2:
     # Portfolio amount
     portfolio_val = st.number_input(
-        "Enter your Portfolio Investment amount (should be atleast >5000) :")
+        "Enter your Portfolio Investment amount (should be atleast >5000) :", value=10000)
 
 if nifty_num == 'Nifty 50':
     tickers = tickers_nifty50
@@ -62,7 +81,13 @@ ef = EfficientFrontier(mu, S)
 weights = ef.max_sharpe()
 
 cleaned_weights = ef.clean_weights()
+
+# Log the console Verbose output and print it to Standard output
+log.start()
 ef.portfolio_performance(verbose=True)
+log.stop()
+for i in range(3):
+    st.write(log.messages[2 * i])
 
 # Portfolio Value
 latest_prices = get_latest_prices(data)
@@ -70,5 +95,43 @@ weights = cleaned_weights
 da = DiscreteAllocation(weights, latest_prices,
                         total_portfolio_value=portfolio_val)
 allocation, leftover = da.lp_portfolio()
-st.write('Discreate ALlocation : ', allocation)
+df_allocation = pd.DataFrame.from_dict(allocation, orient='index')
+# df_allocation.index.rename('new name', inplace=True)
+# df_allocation.rename(columns={"0": 'Quantity'}, inplace=True)
+
+# st.write('Discreate Allocation : ')
+# st.dataframe(df_allocation)
+# st.write('Funds Remaining : ₹', leftover)
+
+# Store the company name into list
+company_name = []
+company_sector = []
+company_beta = []
+company_trailingPE = []
+company_previousClose = []
+discrete_allocation_list = []
+for symbol in allocation:
+    data = yf.Ticker(symbol).info
+    company_name.append(data['longName'])
+    company_sector.append(data['sector'])
+    company_beta.append(data['beta'])
+    company_trailingPE.append(data['trailingPE'])
+    company_previousClose.append(data['regularMarketPreviousClose'])
+    discrete_allocation_list.append(allocation.get(symbol))
+
+# Create a Dataframe for Portfolio
+portfolio_df = pd.DataFrame(columns=['Company_Name', 'Company_Ticker', 'Company_Sector', 'Company_Beta',
+                                     'Company_TrailingPE', 'Company_PreviousClose', 'Disctrete Value_'+str(portfolio_val)])
+
+portfolio_df['Company_Name'] = company_name
+portfolio_df['Company_Ticker'] = allocation
+portfolio_df['Company_Sector'] = company_sector
+portfolio_df['Company_Beta'] = company_beta
+portfolio_df['Company_TrailingPE'] = company_trailingPE
+portfolio_df['Company_PreviousClose'] = company_previousClose
+portfolio_df['Disctrete Value_'+str(portfolio_val)] = discrete_allocation_list
+
+# Show the Portfolio
+st.write('Discreate Allocation : ')
+st.dataframe(portfolio_df)
 st.write('Funds Remaining : ₹', leftover)
