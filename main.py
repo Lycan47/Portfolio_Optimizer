@@ -44,7 +44,7 @@ st.title("Lycan's Portfolio Optimizer")
 st.markdown("""
  * Calculate the executed annualized returns and the annualized sample covariance matrix of the daily asset
  * Use the menu at left to select NIFTY Index and your investment amount
- * Your predicted portfolio stocks will apear below with their perfromance
+ * Your predicted portfolio stocks will apear below with their performance
 """)
 
 st.sidebar.markdown("## Select Index and Amount")
