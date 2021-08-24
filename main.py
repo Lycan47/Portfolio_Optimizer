@@ -111,7 +111,7 @@ st.subheader('Discreate Allocation : ')
 st.dataframe(df_allocation)
 st.write('Funds Remaining : ₹', round(leftover, 2))
 
-with st.beta_expander("See Additional Details"):
+with st.expander("See Additional Details"):
     df_load_state = st.text('Hold Tight....Loading Addditional data👉👈 ')
     # Store the company name into list
     company_name = []
